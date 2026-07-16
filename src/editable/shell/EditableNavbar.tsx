@@ -1,139 +1,161 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, Search, UserPlus, LogIn, X, PlusCircle } from 'lucide-react'
+import { LogIn, PlusCircle, Search, UserPlus, X, Menu } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/site-config'
 import { globalContent } from '@/editable/content/global.content'
 import { useEditableLocalAuthSession } from '@/editable/components/EditableLocalAuthForms'
 
+/*
+  Floating glass-pill navbar (reference: kren / vaboulus). No task links —
+  the library, collections and any task lanes are discovered through the
+  home hero, footer collections column, and /search. Only logo · About ·
+  Contact · search icon · auth actions live here.
+*/
+
+const navLinks: Array<{ label: string; href: string }> = [
+  { label: 'About', href: '/about' },
+  { label: 'The Library', href: '/sbm' },
+  { label: 'Contact', href: '/contact' },
+]
+
 export function EditableNavbar() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
   const { session, logout } = useEditableLocalAuthSession()
-  const navItems = useMemo(
-    () => SITE_CONFIG.tasks.filter((task) => task.enabled).map((task) => ({ label: task.label, href: task.route })),
-    []
-  )
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => { setOpen(false) }, [pathname])
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   return (
-    <header className="sticky top-0 z-50 bg-[var(--editable-nav-bg)]/96 text-[var(--editable-nav-text)] backdrop-blur-md">
-      <div className="h-[3px] bg-[linear-gradient(90deg,transparent_0%,var(--slot4-accent)_20%,var(--slot4-accent)_80%,transparent_100%)]" />
-
-      <nav className="mx-auto flex min-h-[76px] w-full max-w-[var(--editable-container)] items-center gap-5 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="group flex shrink-0 items-center gap-3 border-r border-[var(--editable-border)] pr-5">
-          <span className="flex h-11 w-11 items-center justify-center border border-[var(--slot4-accent)]/45 bg-[var(--slot4-surface-bg)] transition group-hover:border-[var(--slot4-accent)]">
-            <img src="/favicon.png?v=20260413" alt={SITE_CONFIG.name} className="h-8 w-8 object-contain" />
+    <header className="pointer-events-none sticky top-0 z-50 px-4 pt-4 sm:pt-5">
+      <nav
+        className={`pointer-events-auto mx-auto flex w-full max-w-[var(--editable-container)] items-center gap-3 rounded-[var(--editable-radius-pill)] border border-[var(--editable-border)] bg-[var(--editable-nav-bg)] px-4 py-2.5 backdrop-blur-xl transition-shadow duration-500 sm:px-6 ${
+          scrolled ? 'shadow-[var(--editable-shadow-soft)]' : 'shadow-none'
+        }`}
+      >
+        <Link href="/" className="group flex items-center gap-2.5 pr-1">
+          <span className="flex h-9 w-9 items-center justify-center  bg-[var(--slot4-page-text)] text-[var(--slot4-cream)]">
+            <img src="/favicon.png?v=20260413" alt={SITE_CONFIG.name} className="h-7 w-7 object-contain invert" />
           </span>
-          <span className="hidden min-w-0 md:block">
-            <span className="editable-display block max-w-[200px] truncate text-xl font-semibold leading-none tracking-[0.01em]">{SITE_CONFIG.name}</span>
-            <span className="mt-1 block max-w-[200px] truncate text-[10px] font-medium uppercase tracking-[0.26em] text-[var(--slot4-muted-text)]">
-              {globalContent.nav?.tagline || SITE_CONFIG.tagline}
-            </span>
+          <span className="editable-display hidden text-[15px] font-bold tracking-[-0.02em] text-[var(--slot4-page-text)] sm:block">
+            {SITE_CONFIG.name}
           </span>
         </Link>
 
-        <div className="hidden items-stretch gap-0 lg:flex">
-          {navItems.slice(0, 5).map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative flex items-center px-4 text-[11px] font-semibold uppercase tracking-[0.22em] transition ${
-                  active ? 'text-[var(--slot4-accent)]' : 'text-[var(--slot4-muted-text)] hover:text-[var(--slot4-page-text)]'
-                }`}
-              >
-                {item.label}
-                {active ? <span className="absolute inset-x-3 bottom-0 h-[2px] bg-[var(--slot4-accent)]" /> : null}
-              </Link>
-            )
-          })}
+        <div className="hidden flex-1 items-center justify-center gap-1 lg:flex">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`relative rounded-[var(--editable-radius-pill)] px-4 py-2 text-sm font-medium transition-colors duration-300 ${
+                isActive(link.href)
+                  ? 'text-[var(--slot4-page-text)]'
+                  : 'text-[var(--slot4-muted-text)] hover:text-[var(--slot4-page-text)]'
+              }`}
+            >
+              {link.label}
+              {isActive(link.href) ? (
+                <span className="absolute inset-x-4 -bottom-0.5 h-[2px] rounded-full bg-[var(--slot4-accent)]" />
+              ) : null}
+            </Link>
+          ))}
         </div>
 
-        <form action="/search" className="mx-auto hidden min-w-0 flex-1 justify-center md:flex">
-          <label className="flex w-full max-w-md items-center gap-2 border-b border-[var(--slot4-accent)]/30 pb-2 transition focus-within:border-[var(--slot4-accent)]">
-            <Search className="h-4 w-4 shrink-0 text-[var(--slot4-accent)]" />
-            <input
-              name="q"
-              type="search"
-              placeholder="Search posts"
-              className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-[var(--slot4-muted-text)]"
-            />
-          </label>
-        </form>
-
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5">
+          <Link
+            href="/search"
+            aria-label="Search"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--editable-border)] bg-[var(--slot4-surface-bg)] text-[var(--slot4-page-text)] transition-colors duration-300 hover:bg-[var(--slot4-page-text)] hover:text-[var(--slot4-cream)]"
+          >
+            <Search className="h-4 w-4" />
+          </Link>
           {session ? (
             <>
               <Link
                 href="/create"
-                className="hidden items-center gap-2 border border-[var(--slot4-accent)] bg-[var(--editable-cta-bg)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--editable-cta-text)] transition hover:opacity-90 sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-[var(--editable-radius-pill)] bg-[var(--slot4-accent)] px-4 py-2 text-sm font-semibold text-[var(--slot4-on-accent)] transition-transform duration-500 hover:-translate-y-0.5 sm:inline-flex"
               >
-                <PlusCircle className="h-3.5 w-3.5" /> Create
+                <PlusCircle className="h-4 w-4" /> Add resource
               </Link>
               <button
                 type="button"
                 onClick={logout}
-                className="hidden items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--slot4-muted-text)] transition hover:text-[var(--slot4-page-text)] sm:inline-flex"
+                className="hidden text-sm font-medium text-[var(--slot4-muted-text)] transition-colors hover:text-[var(--slot4-page-text)] sm:inline-flex sm:px-3"
               >
-                Logout
+                Sign out
               </button>
             </>
           ) : (
             <>
               <Link
                 href="/login"
-                className="hidden items-center gap-2 border border-[var(--editable-border)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--slot4-muted-text)] transition hover:border-[var(--slot4-accent)]/40 hover:text-[var(--slot4-page-text)] sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-[var(--editable-radius-pill)] px-3 py-2 text-sm font-medium text-[var(--slot4-muted-text)] transition-colors hover:text-[var(--slot4-page-text)] sm:inline-flex"
               >
-                <LogIn className="h-3.5 w-3.5" /> Login
+                <LogIn className="h-4 w-4" /> Sign in
               </Link>
               <Link
                 href="/signup"
-                className="hidden items-center gap-2 border border-[var(--slot4-accent)] bg-[var(--editable-cta-bg)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--editable-cta-text)] transition hover:opacity-90 sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-[var(--editable-radius-pill)] bg-[var(--slot4-page-text)] px-4 py-2 text-sm font-semibold text-[var(--slot4-cream)] transition-transform duration-500 hover:-translate-y-0.5 sm:inline-flex"
               >
-                <UserPlus className="h-3.5 w-3.5" /> Sign up
+                <UserPlus className="h-4 w-4" /> Join
               </Link>
             </>
           )}
           <button
             type="button"
-            onClick={() => setOpen((value) => !value)}
-            className="border border-[var(--editable-border)] bg-[var(--slot4-surface-bg)] p-2 lg:hidden"
-            aria-label="Toggle menu"
+            aria-label="Menu"
+            onClick={() => setOpen((v) => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--editable-border)] bg-[var(--slot4-surface-bg)] text-[var(--slot4-page-text)] lg:hidden"
           >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
       </nav>
 
-      <div className="h-px bg-[var(--editable-border)]" />
-
       {open ? (
-        <div className="border-t border-[var(--editable-border)] bg-[var(--editable-nav-bg)] px-4 py-5 lg:hidden">
-          <form action="/search" className="mb-5 flex items-center gap-2 border-b border-[var(--slot4-accent)]/30 pb-2">
-            <Search className="h-4 w-4 text-[var(--slot4-accent)]" />
-            <input name="q" type="search" placeholder="Search posts" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--slot4-muted-text)]" />
-          </form>
+        <div className="pointer-events-auto mx-auto mt-2 w-full max-w-[var(--editable-container)] overflow-hidden rounded-[var(--editable-radius-lg)] border border-[var(--editable-border)] bg-[var(--slot4-surface-bg)] p-4 shadow-[var(--editable-shadow-lift)] lg:hidden">
           <div className="grid gap-1">
-            {[{ label: 'Home', href: '/' }, ...navItems, { label: 'Contact', href: '/contact' }, ...(session ? [{ label: 'Create', href: '/create' }] : [{ label: 'Login', href: '/login' }, { label: 'Sign up', href: '/signup' }])].map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`border-l-2 px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em] ${
-                    active
-                      ? 'border-[var(--slot4-accent)] bg-[var(--slot4-surface-bg)] text-[var(--slot4-accent)]'
-                      : 'border-transparent text-[var(--slot4-muted-text)] hover:border-[var(--slot4-accent)]/40 hover:bg-[var(--slot4-surface-bg)]'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              )
-            })}
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rounded-[var(--editable-radius-md)] px-4 py-3 text-sm font-medium transition-colors ${
+                  isActive(link.href)
+                    ? 'bg-[var(--slot4-page-text)] text-[var(--slot4-cream)]'
+                    : 'text-[var(--slot4-page-text)] hover:bg-[var(--slot4-warm)]'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link href="/search" className="rounded-[var(--editable-radius-md)] px-4 py-3 text-sm font-medium text-[var(--slot4-page-text)] hover:bg-[var(--slot4-warm)]">Search</Link>
+            <div className="mt-2 h-px bg-[var(--editable-border)]" />
+            {session ? (
+              <>
+                <Link href="/create" className="mt-2 rounded-[var(--editable-radius-pill)] bg-[var(--slot4-accent)] px-4 py-3 text-center text-sm font-semibold text-[var(--slot4-on-accent)]">Add a resource</Link>
+                <button type="button" onClick={logout} className="mt-2 rounded-[var(--editable-radius-md)] px-4 py-3 text-left text-sm font-medium text-[var(--slot4-muted-text)]">Sign out</button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="mt-2 rounded-[var(--editable-radius-md)] px-4 py-3 text-sm font-medium text-[var(--slot4-page-text)] hover:bg-[var(--slot4-warm)]">Sign in</Link>
+                <Link href="/signup" className="rounded-[var(--editable-radius-pill)] bg-[var(--slot4-page-text)] px-4 py-3 text-center text-sm font-semibold text-[var(--slot4-cream)]">Join</Link>
+              </>
+            )}
+            {globalContent.nav.tagline ? (
+              <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--slot4-muted-text)]">{globalContent.nav.tagline}</p>
+            ) : null}
           </div>
         </div>
       ) : null}
