@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/site-config'
-import { CATEGORY_OPTIONS } from '@/lib/categories'
 import { globalContent, isUiHiddenTask } from '@/editable/content/global.content'
 import { useEditableLocalAuthSession } from '@/editable/components/EditableLocalAuthForms'
 
@@ -14,22 +13,10 @@ import { useEditableLocalAuthSession } from '@/editable/components/EditableLocal
   filtered by category. No task-key links; profiles (hidden) never appear.
 */
 
-const HERO_COLLECTIONS = [
-  'business',
-  'technology',
-  'health',
-  'travel',
-  'finance',
-  'education',
-  'lifestyle',
-  'entertainment',
-]
-
 export function EditableFooter() {
   const year = new Date().getFullYear()
   const { session, logout } = useEditableLocalAuthSession()
   const sbmEnabled = SITE_CONFIG.tasks.some((t) => t.enabled && t.key === 'sbm' && !isUiHiddenTask(t.key))
-  const collections = HERO_COLLECTIONS.map((slug) => CATEGORY_OPTIONS.find((c) => c.slug === slug)).filter(Boolean) as Array<{ slug: string; name: string }>
 
   return (
     <footer className="mt-24 bg-[var(--editable-footer-bg)] text-[var(--editable-footer-text)]">

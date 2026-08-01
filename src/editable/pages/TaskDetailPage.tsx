@@ -147,7 +147,7 @@ export function TaskDetailView({
 /* ============================================================
    BOOKMARK DETAIL — the flagship public detail page.
    No hero image · no date · premium hero band with domain chip
-   and Visit CTA · quick-facts strip · body with tag chips ·
+   and Visit CTA · quick-facts strip · body content ·
    sticky sidebar (resource card + Visit CTA + trust panel) ·
    one sidebar ad · "More from this collection" strip.
    ============================================================ */
@@ -157,7 +157,6 @@ function BookmarkDetail({ post, related }: { post: SitePost; related: SitePost[]
   const domain = website ? cleanDomain(website) : ''
   const category = categoryOf(post, 'Collection')
   const verified = !!getField(post, ['verified', 'trusted']) || !!website
-  const tags = tagsOf(post)
   const body = getBody(post)
   const sidebarAdSize = pickRandom(getSlotSizes('sidebar'))
   const collectionHref = `/sbm?category=${encodeURIComponent((getField(post, ['category']) || '').toLowerCase().replace(/\s+/g, '-'))}`
@@ -243,24 +242,6 @@ function BookmarkDetail({ post, related }: { post: SitePost; related: SitePost[]
             )}
           </EditableReveal>
 
-          {tags.length ? (
-            <EditableReveal index={1}>
-              <div className="mt-14 border-t border-[var(--tk-line)] pt-8">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--tk-muted)]">Filed under</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <Link
-                      key={tag}
-                      href={`/search?q=${encodeURIComponent(tag)}`}
-                      className="inline-flex items-center gap-1.5 rounded-[var(--editable-radius-pill)] border border-[var(--tk-line)] bg-[var(--tk-surface)] px-3.5 py-1.5 text-xs font-medium text-[var(--tk-text)] transition-colors hover:border-[var(--tk-accent)] hover:text-[var(--tk-accent)]"
-                    >
-                      <Tag className="h-3 w-3" /> {tag}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </EditableReveal>
-          ) : null}
         </article>
 
         <aside className="lg:sticky lg:top-28 lg:self-start">
@@ -273,7 +254,7 @@ function BookmarkDetail({ post, related }: { post: SitePost; related: SitePost[]
                 </span>
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--tk-muted)]">Resource</p>
-                  <p className="editable-display truncate text-sm font-bold">{domain || post.title}</p>
+                  <p className="editable-display truncate text-sm font-bold">{domain || 'Saved resource'}</p>
                 </div>
               </div>
               <div className="p-5">
